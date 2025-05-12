@@ -1,12 +1,3 @@
-<?php
-session_start();
-require_once 'db.php';
-
-if (isset($_SESSION['message'])) {
-    $message = $_SESSION['message'];
-    unset($_SESSION['message']);
-}
-?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -165,6 +156,13 @@ if (isset($_SESSION['message'])) {
             text-decoration: underline;
         }
 
+        .message {
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
         @media (max-width: 768px) {
             .brand-container {
                 padding: 20px;
@@ -195,13 +193,9 @@ if (isset($_SESSION['message'])) {
     </div>
 
     <div class="container">
-        <?php if (isset($message)): ?>
-            <div class="message" style="color: <?php echo (isset($_SESSION['login_attempts']) && $_SESSION['login_attempts'] >= 2) ? '#ff0000' : '#155724'; ?>;">
-                <?php echo htmlspecialchars($message); ?>
-            </div>
-        <?php endif; ?>
+        <div id="message" class="message" style="display: none;"></div>
         
-        <form class="login-form" action="process.php" method="POST">
+        <form class="login-form" id="login-form">
             <h2>Login</h2>
             <div class="input-group">
                 <input type="text" name="username" placeholder="Email Address" required>
@@ -219,5 +213,77 @@ if (isset($_SESSION['message'])) {
             </div>
         </form>
     </div>
+
+    <script>
+        // Simulate session storage for messages and login attempts
+        const session = {
+            get: (key) => localStorage.getItem(key),
+            set: (key, value) => localStorage.setItem(key, value),
+            remove: (key) => localStorage.removeItem(key),
+            incrementAttempts: () => {
+                let attempts = parseInt(localStorage.getItem('login_attempts') || '0');
+                localStorage.setItem('login_attempts', attempts + 1);
+                return attempts + 1;
+            }
+        };
+
+        // Display message if exists
+        window.onload = () => {
+            const message = session.get('message');
+            if (message) {
+                const messageDiv = document.getElementById('message');
+                const attempts = parseInt(session.get('login_attempts') || '0');
+                messageDiv.textContent = message;
+                messageDiv.style.color = attempts >= 2 ? '#ff0000' : '#155724';
+                messageDiv.style.display = 'block';
+                session.remove('message');
+            }
+        };
+
+        // Handle form submission
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const username = formData.get('username');
+            const password = formData.get('password');
+            const remember = formData.get('remember') === 'on';
+
+            try {
+                // Simulate API call to process.php equivalent
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password, remember })
+                });
+
+                const result = await response.json();
+                const messageDiv = document.getElementById('message');
+                const attempts = session.incrementAttempts();
+
+                if (result.success) {
+                    session.set('message', 'Login successful!');
+                    session.set('login_attempts', '0');
+                    messageDiv.style.color = '#155724';
+                    // Redirect or handle successful login
+                    window.location.href = '/dashboard.html';
+                } else {
+                    session.set('message', result.message || 'Invalid credentials');
+                    messageDiv.style.color = attempts >= 2 ? '#ff0000' : '#155724';
+                }
+
+                messageDiv.textContent = session.get('message');
+                messageDiv.style.display = 'block';
+            } catch (error) {
+                const messageDiv = document.getElementById('message');
+                const attempts = session.incrementAttempts();
+                session.set('message', 'Error connecting to server');
+                messageDiv.textContent = session.get('message');
+                messageDiv.style.color = attempts >= 2 ? '#ff0000' : '#155724';
+                messageDiv.style.display = 'block';
+            }
+        });
+    </script>
 </body>
 </html>
