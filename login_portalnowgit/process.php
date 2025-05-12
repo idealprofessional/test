@@ -8,7 +8,7 @@ if (!isset($_SESSION['login_attempts'])) {
 
 if ($_SESSION['login_attempts'] >= 5) {
     $_SESSION['message'] = "Too many login attempts. Try again later.";
-    header("Location: login.php");
+    header("Location: index.html");
     exit();
 }
 
@@ -21,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $_SESSION['message'] = "Invalid email format.";
-        header("Location: login.php");
+        header("Location: index.html");
         exit();
     }
 
@@ -38,10 +38,10 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     fclose($csvFile);
 
     $_SESSION['message'] = "Login failed. Please try again.";
-    header("Location: login.php");
+    header("Location: index.html");
     exit();
 } else {
     $_SESSION['message'] = "Invalid request.";
-    header("Location: login.php");
+    header("Location: index.html");
     exit();
 }
